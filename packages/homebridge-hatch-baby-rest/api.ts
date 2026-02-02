@@ -78,33 +78,40 @@ export class HatchBabyApi {
   }
 
   async createAwsIotClient() {
+    logInfo('[API] Fetching IoT token...')
     const iotResponse = await this.restClient.request<IotTokenResponse>({
         url: apiPath('service/app/restPlus/token/v1/fetch'),
-      }),
-      { Credentials: credentials } =
-        await requestWithRetry<IotCredentialsResponse>({
-          url: `https://cognito-identity.${iotResponse.region}.amazonaws.com`,
-          method: 'POST',
-          headers: {
-            'content-type': 'application/x-amz-json-1.1',
-            'X-Amz-Target':
-              'AWSCognitoIdentityService.GetCredentialsForIdentity',
-          },
-          json: {
-            IdentityId: iotResponse.identityId,
-            Logins: {
-              'cognito-identity.amazonaws.com': iotResponse.token,
-            },
-          },
-        }),
-      mqttClient = new AwsIotDevice({
-        protocol: 'wss',
-        host: iotResponse.endpoint.replace('https://', ''),
-        accessKeyId: credentials.AccessKeyId,
-        secretKey: credentials.SecretKey,
-        sessionToken: credentials.SessionToken,
       })
+    logInfo(`[API] Got IoT token, region: ${iotResponse.region}, endpoint: ${iotResponse.endpoint}`)
 
+    logInfo('[API] Getting AWS Cognito credentials...')
+    const { Credentials: credentials } =
+      await requestWithRetry<IotCredentialsResponse>({
+        url: `https://cognito-identity.${iotResponse.region}.amazonaws.com`,
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-amz-json-1.1',
+          'X-Amz-Target':
+            'AWSCognitoIdentityService.GetCredentialsForIdentity',
+        },
+        json: {
+          IdentityId: iotResponse.identityId,
+          Logins: {
+            'cognito-identity.amazonaws.com': iotResponse.token,
+          },
+        },
+      })
+    logInfo('[API] Got AWS credentials, creating MQTT client...')
+
+    const mqttClient = new AwsIotDevice({
+      protocol: 'wss',
+      host: iotResponse.endpoint.replace('https://', ''),
+      accessKeyId: credentials.AccessKeyId,
+      secretKey: credentials.SecretKey,
+      sessionToken: credentials.SessionToken,
+    })
+
+    logInfo('[API] MQTT client created')
     return mqttClient
   }
 
@@ -164,11 +171,17 @@ export class HatchBabyApi {
   }
 
   async getDevices() {
+    logInfo('[API] Fetching devices, member info, and creating IoT client...')
     const [devices, member, onIotClient] = await Promise.all([
         this.getIotDevices(...knownProducts),
         this.getMember(),
         this.getOnIotClient(),
-      ]),
+      ])
+
+    logInfo(`[API] Found ${devices.length} devices:`)
+    devices.forEach(d => logInfo(`[API]   - ${d.name} (${d.product}) MAC: ${d.macAddress}`))
+
+    const
       createDevices = <T extends IotDevice<any>>(
         product: Product,
         Device: new (

@@ -13,7 +13,7 @@ let logger: Logger = {
       console.error(message)
     },
   },
-  debugEnabled = false
+  debugEnabled = true // FORK: Always enable debug logging
 
 export function logDebug(message: any) {
   if (debugEnabled) {

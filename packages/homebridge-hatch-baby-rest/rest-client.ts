@@ -1,4 +1,4 @@
-import { delay, logError } from '../shared/util.ts'
+import { delay, logError, logInfo, logDebug } from '../shared/util.ts'
 import {
   LoginFailureResponse,
   LoginResponse,
@@ -81,6 +81,7 @@ export class RestClient {
   }
 
   async logIn(): Promise<LoginResponse> {
+    logInfo(`[RestClient] Logging in as ${this.authOptions.email}`)
     try {
       const resp = await requestWithRetry<LoginResponse | LoginFailureResponse>(
         {
@@ -94,13 +95,16 @@ export class RestClient {
       )
 
       if ('status' in resp && resp.status === 'failure') {
+        logError(`[RestClient] Login failed: ${resp.message}`)
         throw new Error(resp.message)
       }
 
+      logInfo(`[RestClient] Login SUCCESS - token received`)
       return resp as LoginResponse
     } catch (requestError: any) {
       const errorMessage =
         'Failed to fetch oauth token from Hatch Baby. Verify that your email and password are correct.'
+      logError(`[RestClient] Login FAILED: ${requestError.message || requestError}`)
       logError(requestError.response || requestError)
       logError(errorMessage)
       throw new Error(errorMessage)
@@ -112,6 +116,7 @@ export class RestClient {
   }
 
   async request<T = void>(options: RequestInit & { url: string }): Promise<T> {
+    logDebug(`[RestClient] API request: ${options.method || 'GET'} ${options.url}`)
     try {
       const loginResponse = await this.loginPromise,
         headers: HeadersInit = {
@@ -123,25 +128,29 @@ export class RestClient {
           headers,
         })
 
+      logDebug(`[RestClient] API response received for ${options.url}`)
       return response.payload
     } catch (e: any) {
       const response = e.response || {},
         { url } = options
 
+      logError(`[RestClient] API request FAILED: ${url} - status ${response.status || 'unknown'}`)
+
       if (response.status === 401) {
+        logError(`[RestClient] 401 Unauthorized - refreshing auth`)
         this.refreshAuth()
         return this.request(options)
       }
 
       if (response.status === 404 && url.startsWith(apiBaseUrl)) {
-        logError('404 from endpoint ' + url)
+        logError('[RestClient] 404 from endpoint ' + url)
 
         throw new Error(
           'Not found with response: ' + JSON.stringify(response.data),
         )
       }
 
-      logError(`Request to ${url} failed`)
+      logError(`[RestClient] Request to ${url} failed: ${e.message || e}`)
 
       throw e
     }
