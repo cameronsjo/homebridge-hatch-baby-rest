@@ -120,3 +120,17 @@ Before deploying changes:
 | 429 rate limit | Wait 60 seconds between API calls |
 | Accessory type wrong in HomeKit | Clear accessory cache, remove from Home app |
 | MQTT disconnects | Check AWS credentials refresh (8-hour cycle) |
+
+## Known Issue: HomeKit Caches Accessory Type
+
+**Status:** Unresolved - HomeKit stubbornly shows Switch even after code changes to Lightbulb.
+
+The code correctly creates a `Service.Lightbulb` with brightness control, but HomeKit caches the original accessory type and won't update it. Tried:
+- Removing accessory from Home app
+- Clearing `cachedAccessories` file
+- Changing UUID to force new accessory
+- Multiple Homebridge restarts
+
+None of these reliably force HomeKit to recognize the type change. The volume control code works - this is purely a HomeKit UI issue. May require completely unpairing the Homebridge bridge and re-pairing from scratch.
+
+**Pin for later:** Investigate if there's a way to force HomeKit to refresh accessory metadata, or if we need to use a different approach (separate accessory for volume?).

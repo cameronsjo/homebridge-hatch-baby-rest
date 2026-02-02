@@ -26,6 +26,19 @@ Fixed a critical bug where the device would ignore commands because the `paused`
 
 Comprehensive logging throughout the MQTT and API flow for troubleshooting.
 
+## Known Issues
+
+### HomeKit Shows Switch Instead of Lightbulb
+
+HomeKit aggressively caches accessory types. If upgrading from an older version, the Restore may still appear as a Switch instead of a Lightbulb (with brightness/volume slider).
+
+**Workarounds to try:**
+1. Remove the accessory from Home app, restart Homebridge
+2. Clear Homebridge accessory cache: `sudo rm /var/lib/homebridge/accessories/cachedAccessories`
+3. Unpair and re-pair the Homebridge bridge entirely
+
+The volume control code is functional - it's purely a HomeKit UI caching issue.
+
 ## Documentation
 
 - [Enhanced Controls Design Doc](./docs/plans/2026-02-01-restore-iot-enhanced-controls-design.md) - Full shadow state reference and future feature plans
