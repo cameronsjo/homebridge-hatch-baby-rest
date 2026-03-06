@@ -146,30 +146,32 @@ export class IotDevice<T> {
       logError(`[IotDevice] TIMEOUT for ${thingNameTimeout}, token: ${clientToken}`)
     })
 
+    // Attach connect handler synchronously to avoid missing the event.
+    // Previously this was deferred behind previousUpdatePromise, causing a
+    // race where 'connect' fired before the listener was registered.
+    const connectPromise = new Promise<void>((resolve) => {
+      mqttClient.on('connect', () => {
+        logInfo(`[IotDevice] MQTT CONNECTED for ${this.name}`)
+        mqttClient.register(thingName, {}, () => {
+          logInfo(`[IotDevice] MQTT registered for thing: ${thingName}`)
+          getClientToken = mqttClient.get(thingName)!
+          logDebug(`[IotDevice] Got client token: ${getClientToken}`)
+          resolve(
+            firstValueFrom(
+              this.onStatusToken.pipe(
+                filter((token) => token === getClientToken),
+              ),
+            ) as Promise<any>,
+          )
+        })
+      })
+    })
+
     this.previousUpdatePromise = this.previousUpdatePromise
       .catch((err) => {
         logError(`[IotDevice] Previous update promise error for ${this.name}: ${err}`)
       })
-      .then(
-        () =>
-          new Promise((resolve) => {
-            mqttClient.on('connect', () => {
-              logInfo(`[IotDevice] MQTT CONNECTED for ${this.name}`)
-              mqttClient.register(thingName, {}, () => {
-                logInfo(`[IotDevice] MQTT registered for thing: ${thingName}`)
-                getClientToken = mqttClient.get(thingName)!
-                logDebug(`[IotDevice] Got client token: ${getClientToken}`)
-                resolve(
-                  firstValueFrom(
-                    this.onStatusToken.pipe(
-                      filter((token) => token === getClientToken),
-                    ),
-                  ),
-                )
-              })
-            })
-          }),
-      )
+      .then(() => connectPromise)
   }
 
   getCurrentState() {
