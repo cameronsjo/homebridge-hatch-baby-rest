@@ -116,28 +116,30 @@ export class IotDevice<T> {
       )
     })
 
+    // Attach connect handler synchronously to avoid missing the event.
+    // Previously this was deferred behind previousUpdatePromise, causing a
+    // race where 'connect' fired before the listener was registered.
+    const connectPromise = new Promise<void>((resolve) => {
+      mqttClient.on('connect', () => {
+        mqttClient.register(thingName, {}, () => {
+          getClientToken = mqttClient.get(thingName)!
+          resolve(
+            firstValueFrom(
+              this.onStatusToken.pipe(
+                filter((token) => token === getClientToken),
+              ),
+            ) as Promise<any>,
+          )
+        })
+      })
+    })
+
     this.previousUpdatePromise = this.previousUpdatePromise
       .catch((_) => {
         // ignore errors, they shouldn't be possible
         void _
       })
-      .then(
-        () =>
-          new Promise((resolve) => {
-            mqttClient.on('connect', () => {
-              mqttClient.register(thingName, {}, () => {
-                getClientToken = mqttClient.get(thingName)!
-                resolve(
-                  firstValueFrom(
-                    this.onStatusToken.pipe(
-                      filter((token) => token === getClientToken),
-                    ),
-                  ),
-                )
-              })
-            })
-          }),
-      )
+      .then(() => connectPromise)
   }
 
   getCurrentState() {
