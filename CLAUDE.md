@@ -116,7 +116,7 @@ Before deploying changes:
 
 | Issue | Solution |
 |-------|----------|
-| Device doesn't respond | Check `paused: false` is being sent |
+| Device doesn't respond | Check `paused: false` is being sent. Also verify `MQTT CONNECTED` appears in logs after credential refresh — if missing, the connect listener has a race condition (see field report) |
 | 429 rate limit | Wait 60 seconds between API calls |
 | Accessory type wrong in HomeKit | Clear accessory cache, remove from Home app |
 | MQTT disconnects | Check AWS credentials refresh (8-hour cycle) |
