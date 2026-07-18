@@ -4,7 +4,6 @@ import { BaseAccessory } from '../shared/base-accessory.ts'
 import { RestIot } from './rest-iot.ts'
 import { Restore } from './restore.ts'
 import { logInfo } from '../shared/util.ts'
-import { firstValueFrom } from 'rxjs'
 
 export class RestoreAccessory extends BaseAccessory {
   private pendingVolume: number | undefined
@@ -14,15 +13,15 @@ export class RestoreAccessory extends BaseAccessory {
     super(restore, accessory)
 
     const { Service, Characteristic } = hap,
-      stepName = restore instanceof RestIot ? 'routine' : 'bedtime step'
-
-    // Use Lightbulb for on/off + brightness (volume)
-    const lightbulbService = this.getService(Service.Lightbulb)
-
-    // Remove old Switch service if it exists (migration from previous version)
-    const oldSwitchService = accessory.getService(Service.Switch)
+      stepName = restore instanceof RestIot ? 'routine' : 'bedtime step',
+      // Use Lightbulb for on/off + brightness (volume)
+      lightbulbService = this.getService(Service.Lightbulb),
+      // Remove old Switch service if it exists (migration from previous version)
+      oldSwitchService = accessory.getService(Service.Switch)
     if (oldSwitchService) {
-      logInfo(`Removing old Switch service for ${restore.name}, migrating to Lightbulb`)
+      logInfo(
+        `Removing old Switch service for ${restore.name}, migrating to Lightbulb`,
+      )
       accessory.removeService(oldSwitchService)
     }
 
@@ -60,7 +59,9 @@ export class RestoreAccessory extends BaseAccessory {
         lightbulbService.getCharacteristic(Characteristic.Brightness),
         restore.onVolume,
         (brightness: number) => {
-          logInfo(`Volume set to ${brightness}% for ${restore.name} (playing: ${this.isPlaying})`)
+          logInfo(
+            `Volume set to ${brightness}% for ${restore.name} (playing: ${this.isPlaying})`,
+          )
           if (this.isPlaying) {
             // Device is on - send volume immediately
             restore.setVolume(brightness)

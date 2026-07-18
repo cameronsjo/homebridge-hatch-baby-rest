@@ -70,7 +70,9 @@ export class IotDevice<T> {
     const { thingName } = this.info
     let getClientToken: string
 
-    logInfo(`[IotDevice] Registering MQTT client for ${this.name} (thingName: ${thingName})`)
+    logInfo(
+      `[IotDevice] Registering MQTT client for ${this.name} (thingName: ${thingName})`,
+    )
 
     mqttClient.on('close', () => {
       logError(`[IotDevice] MQTT client CLOSED for ${this.name}`)
@@ -96,7 +98,9 @@ export class IotDevice<T> {
         clientToken,
         status: { state: { desired: T; reported: T } },
       ) => {
-        logInfo(`[IotDevice] Received shadow status for topic: ${topic}, token: ${clientToken}`)
+        logInfo(
+          `[IotDevice] Received shadow status for topic: ${topic}, token: ${clientToken}`,
+        )
 
         if (topic !== thingName) {
           logDebug(`[IotDevice] Ignoring status for different thing: ${topic}`)
@@ -108,11 +112,17 @@ export class IotDevice<T> {
         if (clientToken === getClientToken) {
           const { state } = status
           logInfo(`[IotDevice] Initial shadow state received for ${this.name}`)
-          logInfo(`[IotDevice] Reported state: ${JSON.stringify(state.reported || 'null')}`)
-          logInfo(`[IotDevice] Desired state: ${JSON.stringify(state.desired || 'null')}`)
+          logInfo(
+            `[IotDevice] Reported state: ${JSON.stringify(state.reported || 'null')}`,
+          )
+          logInfo(
+            `[IotDevice] Desired state: ${JSON.stringify(state.desired || 'null')}`,
+          )
           this.onCurrentState.next(assignState(state.reported, state.desired))
         } else {
-          logDebug(`[IotDevice] Status response for update token: ${clientToken}`)
+          logDebug(
+            `[IotDevice] Status response for update token: ${clientToken}`,
+          )
         }
       },
     )
@@ -124,7 +134,9 @@ export class IotDevice<T> {
       const currentState = this.onCurrentState.getValue()
 
       if (!currentState || topic !== thingName) {
-        logDebug(`[IotDevice] Ignoring foreignStateChange - currentState: ${!!currentState}, topic match: ${topic === thingName}`)
+        logDebug(
+          `[IotDevice] Ignoring foreignStateChange - currentState: ${!!currentState}, topic match: ${topic === thingName}`,
+        )
         return
       }
 
@@ -136,22 +148,51 @@ export class IotDevice<T> {
         ),
       )
     })
-
-    ;(mqttClient as any).on('delta', (thingNameDelta: string, stateObject: any, clientToken: string) => {
-      logInfo(`[IotDevice] Delta received for ${thingNameDelta}, token: ${clientToken}`)
-      logDebug(`[IotDevice] Delta state: ${JSON.stringify(stateObject)}`)
-    })
-
-    ;(mqttClient as any).on('timeout', (thingNameTimeout: string, clientToken: string) => {
-      logError(`[IotDevice] TIMEOUT for ${thingNameTimeout}, token: ${clientToken}`)
-    })
+    ;(mqttClient as any).on(
+      'delta',
+      (thingNameDelta: string, stateObject: any, clientToken: string) => {
+        logInfo(
+          `[IotDevice] Delta received for ${thingNameDelta}, token: ${clientToken}`,
+        )
+        logDebug(`[IotDevice] Delta state: ${JSON.stringify(stateObject)}`)
+      },
+    )
+    ;(mqttClient as any).on(
+      'timeout',
+      (thingNameTimeout: string, clientToken: string) => {
+        logError(
+          `[IotDevice] TIMEOUT for ${thingNameTimeout}, token: ${clientToken}`,
+        )
+      },
+    )
 
     // Attach connect handler synchronously to avoid missing the event.
     // Previously this was deferred behind previousUpdatePromise, causing a
     // race where 'connect' fired before the listener was registered.
     const connectPromise = new Promise<void>((resolve) => {
+      let registered = false
       mqttClient.on('connect', () => {
         logInfo(`[IotDevice] MQTT CONNECTED for ${this.name}`)
+
+        if (registered) {
+          // SDK-internal reconnect on the same client: the thing is already
+          // registered (re-registering errors), but the shadow may have
+          // changed while we were disconnected - fetch it fresh
+          const refetchToken = mqttClient.get(thingName)
+          if (refetchToken) {
+            getClientToken = refetchToken
+            logInfo(
+              `[IotDevice] Re-fetching shadow after reconnect for ${this.name} (token: ${refetchToken})`,
+            )
+          } else {
+            logError(
+              `[IotDevice] Shadow re-fetch after reconnect returned no token for ${this.name} (operation in progress?)`,
+            )
+          }
+          return
+        }
+        registered = true
+
         mqttClient.register(thingName, {}, () => {
           logInfo(`[IotDevice] MQTT registered for thing: ${thingName}`)
           getClientToken = mqttClient.get(thingName)!
@@ -169,7 +210,9 @@ export class IotDevice<T> {
 
     this.previousUpdatePromise = this.previousUpdatePromise
       .catch((err) => {
-        logError(`[IotDevice] Previous update promise error for ${this.name}: ${err}`)
+        logError(
+          `[IotDevice] Previous update promise error for ${this.name}: ${err}`,
+        )
       })
       .then(() => connectPromise)
   }
@@ -179,7 +222,9 @@ export class IotDevice<T> {
   }
 
   update(update: DeepPartial<T>) {
-    logInfo(`[IotDevice] update() called for ${this.name}: ${JSON.stringify(update)}`)
+    logInfo(
+      `[IotDevice] update() called for ${this.name}: ${JSON.stringify(update)}`,
+    )
 
     this.previousUpdatePromise = this.previousUpdatePromise
       .catch((err) => {
@@ -189,11 +234,15 @@ export class IotDevice<T> {
         logDebug(`[IotDevice] Executing update for ${this.name}`)
 
         if (!this.mqttClient) {
-          logError(`[IotDevice] CRITICAL: No MQTT Client for ${this.name}! Update cannot be sent.`)
+          logError(
+            `[IotDevice] CRITICAL: No MQTT Client for ${this.name}! Update cannot be sent.`,
+          )
           return
         }
 
-        logInfo(`[IotDevice] Sending MQTT update to thing: ${this.info.thingName}`)
+        logInfo(
+          `[IotDevice] Sending MQTT update to thing: ${this.info.thingName}`,
+        )
         const updateToken = this.mqttClient.update(this.info.thingName, {
           state: {
             desired: update,
@@ -216,7 +265,9 @@ export class IotDevice<T> {
         // wait a max of 30 seconds to finish request
         return Promise.race([requestComplete, delay(30000)]).then((result) => {
           if (result === undefined) {
-            logError(`[IotDevice] MQTT update TIMED OUT after 30s for ${this.name}`)
+            logError(
+              `[IotDevice] MQTT update TIMED OUT after 30s for ${this.name}`,
+            )
           } else {
             logInfo(`[IotDevice] MQTT update completed for ${this.name}`)
           }

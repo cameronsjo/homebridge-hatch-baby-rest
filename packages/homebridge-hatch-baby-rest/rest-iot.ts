@@ -52,14 +52,14 @@ export class RestIot extends IotDevice<RestIotState> implements BaseDevice {
    * Convert HomeKit percentage (0-100) to device value (0-65535)
    */
   private volumeToDevice(percent: number): number {
-    return Math.round(percent * 65535 / 100)
+    return Math.round((percent * 65535) / 100)
   }
 
   /**
    * Convert device value (0-65535) to HomeKit percentage (0-100)
    */
   private volumeFromDevice(raw: number): number {
-    return Math.round(raw * 100 / 65535)
+    return Math.round((raw * 100) / 65535)
   }
 
   private setCurrent(
@@ -68,14 +68,16 @@ export class RestIot extends IotDevice<RestIotState> implements BaseDevice {
     srId: number,
     volume?: number,
   ) {
-    logInfo(`[RestIot] setCurrent called: playing=${playing}, step=${step}, srId=${srId}, volume=${volume}`)
+    logInfo(
+      `[RestIot] setCurrent called: playing=${playing}, step=${step}, srId=${srId}, volume=${volume}`,
+    )
 
     const update: any = {
       current: {
         playing,
         step,
         srId,
-        paused: false,  // Always unpause when setting state
+        paused: false, // Always unpause when setting state
       },
     }
 
@@ -104,15 +106,21 @@ export class RestIot extends IotDevice<RestIotState> implements BaseDevice {
   }
 
   async turnOnRoutine(volume?: number) {
-    logInfo(`[RestIot] turnOnRoutine called for ${this.name}${volume !== undefined ? ` at volume ${volume}%` : ''}`)
+    logInfo(
+      `[RestIot] turnOnRoutine called for ${this.name}${volume !== undefined ? ` at volume ${volume}%` : ''}`,
+    )
     try {
       const routines = await this.fetchRoutines()
       logInfo(`[RestIot] Fetched ${routines.length} routines`)
       if (routines.length === 0) {
-        logError(`[RestIot] No routines found for ${this.name}! Cannot turn on.`)
+        logError(
+          `[RestIot] No routines found for ${this.name}! Cannot turn on.`,
+        )
         return
       }
-      logInfo(`[RestIot] Using routine: id=${routines[0].id}, name=${routines[0].name || 'unnamed'}`)
+      logInfo(
+        `[RestIot] Using routine: id=${routines[0].id}, name=${routines[0].name || 'unnamed'}`,
+      )
       this.setCurrent('routine', 1, routines[0].id, volume)
     } catch (e) {
       logError(`[RestIot] Failed to turn on routine: ${e}`)
@@ -127,10 +135,10 @@ export class RestIot extends IotDevice<RestIotState> implements BaseDevice {
   async fetchRoutines() {
     logInfo(`[RestIot] Fetching routines for MAC: ${this.info.macAddress}`)
     const routinesPath = apiPath(
-        `service/app/routine/v2/fetch?macAddress=${encodeURIComponent(
-          this.info.macAddress,
-        )}`,
-      )
+      `service/app/routine/v2/fetch?macAddress=${encodeURIComponent(
+        this.info.macAddress,
+      )}`,
+    )
     logDebug(`[RestIot] Routines URL: ${routinesPath}`)
 
     const allRoutines = await this.restClient.request<RestIotRoutine[]>({
@@ -138,22 +146,30 @@ export class RestIot extends IotDevice<RestIotState> implements BaseDevice {
       method: 'GET',
     })
     logInfo(`[RestIot] Received ${allRoutines.length} total routines`)
-    logDebug(`[RestIot] All routines: ${JSON.stringify(allRoutines.map(r => ({ id: r.id, name: r.name, type: r.type, button0: r.button0 })))}`)
+    logDebug(
+      `[RestIot] All routines: ${JSON.stringify(allRoutines.map((r) => ({ id: r.id, name: r.name, type: r.type, button0: r.button0 })))}`,
+    )
 
     const sortedRoutines = allRoutines.sort(
-      (a, b) => a.displayOrder - b.displayOrder,
-    )
-    const touchRingRoutines = sortedRoutines.filter((routine) => {
-      return (
-        routine.type === 'favorite' || // Before upgrade, only favorites were on touch ring
-        routine.button0 // After upgrade, many routine types can be on touch ring but will have `button0: true`
-      )
-    })
+        (a, b) => a.displayOrder - b.displayOrder,
+      ),
+      touchRingRoutines = sortedRoutines.filter((routine) => {
+        return (
+          routine.type === 'favorite' || // Before upgrade, only favorites were on touch ring
+          routine.button0 // After upgrade, many routine types can be on touch ring but will have `button0: true`
+        )
+      })
 
-    logInfo(`[RestIot] Filtered to ${touchRingRoutines.length} touch ring routines`)
+    logInfo(
+      `[RestIot] Filtered to ${touchRingRoutines.length} touch ring routines`,
+    )
     if (touchRingRoutines.length === 0 && allRoutines.length > 0) {
-      logError(`[RestIot] WARNING: ${allRoutines.length} routines found but none match touch ring filter!`)
-      logInfo(`[RestIot] Routine types: ${allRoutines.map(r => r.type).join(', ')}`)
+      logError(
+        `[RestIot] WARNING: ${allRoutines.length} routines found but none match touch ring filter!`,
+      )
+      logInfo(
+        `[RestIot] Routine types: ${allRoutines.map((r) => r.type).join(', ')}`,
+      )
     }
 
     return touchRingRoutines
