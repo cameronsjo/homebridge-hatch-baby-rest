@@ -2,7 +2,7 @@ import { RestPlusState, IotDeviceInfo } from '../shared/hatch-sleep-types.ts'
 import { thingShadow as AwsIotDevice } from 'aws-iot-device-sdk'
 import { BehaviorSubject, firstValueFrom, skip, Subject } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { delay, logDebug, logError } from '../shared/util.ts'
+import { delay, logDebug, logError, logInfo } from '../shared/util.ts'
 import { DeepPartial } from 'ts-essentials'
 
 function assignState<T = RestPlusState>(previousState: any, changes: any): T {
@@ -120,7 +120,27 @@ export class IotDevice<T> {
     // Previously this was deferred behind previousUpdatePromise, causing a
     // race where 'connect' fired before the listener was registered.
     const connectPromise = new Promise<void>((resolve) => {
+      let registered = false
       mqttClient.on('connect', () => {
+        if (registered) {
+          // SDK-internal reconnect on the same client: the thing is already
+          // registered (re-registering errors), but the shadow may have
+          // changed while we were disconnected - fetch it fresh
+          const refetchToken = mqttClient.get(thingName)
+          if (refetchToken) {
+            getClientToken = refetchToken
+            logInfo(
+              `[IotDevice] Re-fetching shadow after reconnect for ${this.name} (token: ${refetchToken})`,
+            )
+          } else {
+            logError(
+              `[IotDevice] Shadow re-fetch after reconnect returned no token for ${this.name} (operation in progress?)`,
+            )
+          }
+          return
+        }
+        registered = true
+
         mqttClient.register(thingName, {}, () => {
           getClientToken = mqttClient.get(thingName)!
           resolve(
