@@ -40,7 +40,12 @@ const knownProducts: Product[] = [
     Product.grow,
     Product.answeredReader,
   ],
-  iotClientRefreshPeriod = 8 * 60 * 60 * 1000, // refresh client every 8 hours
+  // Refresh well inside the ~1 hour lifetime of the AWS Cognito credentials
+  // baked into the signed websocket URL. At 8 hours the client spent roughly
+  // seven of every eight holding expired credentials, so the SDK's own fast
+  // reconnect - which replays that original URL - could not recover and every
+  // drop fell through to iotClientDeadConnectionTimeout below
+  iotClientRefreshPeriod = 50 * 60 * 1000,
   iotClientInitialRetryDelay = 30 * 1000,
   iotClientMaxRetryDelay = 5 * 60 * 1000,
   // How long a client may sit disconnected (close/offline without a
