@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: awaiting-merge
 issue: https://github.com/cameronsjo/homebridge-hatch-baby-rest/issues/2
 ---
 
@@ -27,5 +27,9 @@ Land the change against Cameron's fork first, based on fresh `origin/main`; do n
 - [x] Compile the shared package against a pinned stable Homebridge 2 release and refresh the lockfile.
 - [x] Add the release-managed patch changeset for both packages.
 - [x] Run build, tests, lint, search checks, and package inspection.
-- [ ] Keep production on Homebridge 1.x while SimpliSafe remains the estate-level blocker.
-- [ ] Close issue #2 through the fork pull request.
+- [x] Keep production on Homebridge 1.x while SimpliSafe remains the estate-level blocker.
+- [ ] Merge pull request #3; issue #2 closes automatically.
+
+## Next step
+
+Merge [pull request #3](https://github.com/cameronsjo/homebridge-hatch-baby-rest/pull/3), optionally deploy the Hatch tarball to the existing Homebridge 1.x host for an on/off and volume smoke test, and do not upgrade the estate to Homebridge 2.x while SimpliSafe remains blocked.
