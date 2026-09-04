@@ -1,5 +1,5 @@
 ---
-status: approved
+status: implemented
 issue: https://github.com/cameronsjo/homebridge-hatch-baby-rest/issues/2
 ---
 
@@ -21,11 +21,11 @@ Land the change against Cameron's fork first, based on fresh `origin/main`; do n
 
 ## Checklist
 
-- [ ] Replace the callback handler and remove obsolete callback types.
-- [ ] Test registration, value forwarding, promise completion and rejection, absent setters, and deduplicated observable updates.
-- [ ] Update both public package engine declarations for stable Homebridge 2.x.
-- [ ] Compile the shared package against a pinned stable Homebridge 2 release and refresh the lockfile.
-- [ ] Add the release-managed patch changeset for both packages.
-- [ ] Run build, tests, lint, search checks, and package inspection.
+- [x] Replace the callback handler and remove obsolete callback types.
+- [x] Test registration, value forwarding, promise completion and rejection, absent setters, and deduplicated observable updates.
+- [x] Update both public package engine declarations for stable Homebridge 2.x.
+- [x] Compile the shared package against a pinned stable Homebridge 2 release and refresh the lockfile.
+- [x] Add the release-managed patch changeset for both packages.
+- [x] Run build, tests, lint, search checks, and package inspection.
 - [ ] Keep production on Homebridge 1.x while SimpliSafe remains the estate-level blocker.
 - [ ] Close issue #2 through the fork pull request.
