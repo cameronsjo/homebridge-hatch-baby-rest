@@ -3,4 +3,4 @@
 'homebridge-hatch-rest-bluetooth': patch
 ---
 
-Await Homebridge characteristic setters and declare stable Homebridge 2 compatibility.
+Migrate characteristic setters from callbacks to promise-aware handlers and declare stable Homebridge 2 compatibility.
