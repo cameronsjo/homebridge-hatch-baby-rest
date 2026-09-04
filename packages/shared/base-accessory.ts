@@ -3,7 +3,6 @@ import { distinctUntilChanged } from 'rxjs/operators'
 import { Observable, of } from 'rxjs'
 import type {
   Characteristic as CharacteristicClass,
-  CharacteristicSetCallback,
   CharacteristicValue,
   PlatformAccessory,
   Service as ServiceClass,
@@ -73,13 +72,7 @@ export class BaseAccessory {
     setValue?: (value: any) => any,
   ) {
     if (setValue) {
-      characteristic.on(
-        'set',
-        (value: CharacteristicValue, callback: CharacteristicSetCallback) => {
-          callback()
-          setValue(value)
-        },
-      )
+      characteristic.onSet((value: CharacteristicValue) => setValue(value))
     }
 
     onValue.pipe(distinctUntilChanged()).subscribe((value) => {
