@@ -16,7 +16,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.4",
     "eslint": "9.38.0",
-    "homebridge": "2.0.0-beta.8",
+    "homebridge": "2.4.0",
     "prettier": "3.6.2",
     "vitest": "^3.2.4"
   }
