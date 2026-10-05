@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.0.2
+
+### Patch Changes
+
+- [`32aa171`](https://github.com/dgreif/homebridge-hatch-baby-rest/commit/32aa171d29d6c7c045a0ad97b9fafce3ccb49631) Thanks [@cameronsjo](https://github.com/cameronsjo)! - Migrate characteristic setters from callbacks to promise-aware handlers and declare stable Homebridge 2 compatibility.
+
 ## 6.0.1
 
 ### Patch Changes
