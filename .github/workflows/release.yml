@@ -20,10 +20,15 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
+        with:
+          # changesets/action sets up its own git credentials from
+          # GITHUB_TOKEN, so the checkout token need not stay on disk
+          # while npm ci runs install scripts.
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
           node-version: 22.x
           cache: 'npm'
@@ -31,11 +36,12 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # This fork is not published to npm (the package name belongs to
+      # upstream). It deploys by tarball to the Pi, so this job only keeps
+      # the "Version Packages" PR up to date and never runs a publish.
       - name: Create Release Pull Request
         uses: changesets/action@v1
         with:
           version: npm run version
-          publish: npm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_CHANGESETS }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

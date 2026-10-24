@@ -5,14 +5,23 @@ import { filter } from 'rxjs/operators'
 import { delay, logDebug, logError, logInfo } from '../shared/util.ts'
 import { DeepPartial } from 'ts-essentials'
 
-function assignState<T = RestPlusState>(previousState: any, changes: any): T {
+export function assignState<T = RestPlusState>(
+  previousState: any,
+  changes: any,
+): T {
   const state = Object.assign({}, previousState)
 
   for (const key in changes) {
-    if (typeof changes[key] === 'object') {
-      state[key] = assignState(previousState[key] || {}, changes[key])
+    const change = changes[key]
+    if (
+      change !== null &&
+      typeof change === 'object' &&
+      !Array.isArray(change)
+    ) {
+      // previousState can be undefined when the shadow has no reported section yet
+      state[key] = assignState(previousState?.[key] || {}, change)
     } else {
-      state[key] = changes[key]
+      state[key] = change
     }
   }
 
