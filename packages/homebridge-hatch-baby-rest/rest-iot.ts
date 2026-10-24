@@ -20,7 +20,7 @@ export class RestIot extends IotDevice<RestIotState> implements BaseDevice {
   get model() {
     return this.info.product === Product.restoreIot
       ? 'Restore IoT'
-      : Product.riotPlus
+      : this.info.product === Product.riotPlus
         ? 'Rest+ 2nd Gen'
         : 'Rest 2nd Gen'
   }
