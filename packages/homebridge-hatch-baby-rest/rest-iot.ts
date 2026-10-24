@@ -4,7 +4,7 @@ import {
   RestIotRoutine,
   RestIotState,
 } from '../shared/hatch-sleep-types.ts'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { BaseDevice } from '../shared/base-accessory.ts'
 import { IotDevice } from './iot-device.ts'
 import { logInfo, logError, logDebug } from '../shared/util.ts'
@@ -37,16 +37,24 @@ export class RestIot extends IotDevice<RestIotState> implements BaseDevice {
   }
 
   onSomeContentPlaying = this.onState.pipe(
-    map((state) => state.current.playing !== 'none'),
+    // A shadow with no reported section can lack `current` until the device reports
+    map((state) => state.current?.playing),
+    filter((playing) => playing !== undefined),
+    map((playing) => playing !== 'none'),
     distinctUntilChanged(),
   )
 
   onVolume = this.onState.pipe(
-    map((state) => this.volumeFromDevice(state.current.sound.v)),
+    map((state) => state.current?.sound?.v),
+    filter((v) => v !== undefined),
+    map((v) => this.volumeFromDevice(v)),
     distinctUntilChanged(),
   )
 
-  onFirmwareVersion = this.onState.pipe(map((state) => state.deviceInfo.f))
+  onFirmwareVersion = this.onState.pipe(
+    map((state) => state.deviceInfo?.f),
+    filter((f) => f !== undefined),
+  )
 
   /**
    * Convert HomeKit percentage (0-100) to device value (0-65535)

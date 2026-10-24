@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
-import { firstValueFrom } from 'rxjs'
+import { firstValueFrom, type Observable } from 'rxjs'
 import { useLogger } from '../../shared/util.ts'
 import { Product } from '../../shared/hatch-sleep-types.ts'
 import { RestIot } from '../rest-iot.ts'
@@ -64,6 +64,41 @@ describe('RestIot state', () => {
   it('reports whether content is playing', async () => {
     const { device } = await connected()
     expect(await firstValueFrom(device.onSomeContentPlaying)).toBe(false)
+  })
+})
+
+describe('RestIot with a desired-only shadow', () => {
+  it('waits for the fields instead of erroring the streams', async () => {
+    const { client, device } = createRestIot(),
+      seen: unknown[] = [],
+      errors: unknown[] = [],
+      streams: Observable<unknown>[] = [
+        device.onVolume,
+        device.onSomeContentPlaying,
+        device.onFirmwareVersion,
+      ]
+    for (const stream of streams) {
+      stream.subscribe({
+        next: (value) => seen.push(value),
+        error: (e) => errors.push(e),
+      })
+    }
+
+    connectWithShadow(client, 'thing-1', {
+      desired: { current: { playing: 'routine' } },
+    })
+    await flush()
+    expect(errors).toEqual([])
+    expect(seen).toEqual([true])
+
+    client.emit('foreignStateChange', 'thing-1', 'update', {
+      state: {
+        reported: { current: { sound: { v: 65535 } }, deviceInfo: { f: '9' } },
+      },
+    })
+    await flush()
+    expect(errors).toEqual([])
+    expect(seen).toEqual(expect.arrayContaining([true, 100, '9']))
   })
 })
 
