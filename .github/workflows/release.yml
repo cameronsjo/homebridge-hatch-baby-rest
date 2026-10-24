@@ -21,6 +21,11 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
+        with:
+          # changesets/action sets up its own git credentials from
+          # GITHUB_TOKEN, so the checkout token need not stay on disk
+          # while npm ci runs install scripts.
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
