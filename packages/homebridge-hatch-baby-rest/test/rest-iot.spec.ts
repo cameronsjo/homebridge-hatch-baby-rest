@@ -22,7 +22,7 @@ function createRestIot(
 ) {
   const client = new FakeMqttClient(),
     restClient = {
-      request: vi.fn(async () => routines),
+      request: vi.fn(() => Promise.resolve(routines)),
     } as unknown as RestClient,
     device = new RestIot(
       deviceInfo({ product: product as any }),
