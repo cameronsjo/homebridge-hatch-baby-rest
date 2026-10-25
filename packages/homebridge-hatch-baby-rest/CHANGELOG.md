@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.1.2
+
+### Patch Changes
+
+- [`d541d56`](https://github.com/dgreif/homebridge-hatch-baby-rest/commit/d541d56a7ce810ee409aec8657abc951e70395d6) Thanks [@claude](https://github.com/claude)! - Fix a crash when the device shadow has no reported section, keep null and array values intact when merging shadow updates, and label Rest 2nd Gen devices correctly in HomeKit.
+
 ## 6.1.1
 
 ### Patch Changes
